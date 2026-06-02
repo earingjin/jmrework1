@@ -1,1 +1,2 @@
-# jmrework1
+# -AI
+AI서비스
