@@ -1,0 +1,109 @@
+(() => {
+const TARGET_INTEREST_SCHEMA = {
+  reportTitle: '',
+  participantInfo: {
+    name: '',
+    age: '',
+    education: '',
+    targetJob: '',
+    coreCode: '',
+    strengthSummary: ''
+  },
+  integratedAnalysis: '',
+  targetJobCompetencyAnalysis: {
+    fitSummary: '',
+    matchingPoints: [],
+    gaps: []
+  },
+  swot: {
+    strengths: [],
+    weaknesses: [],
+    opportunities: [],
+    threats: []
+  },
+  recommendedJobs: [
+    {
+      title: '',
+      reason: '',
+      relatedStrength: '',
+      preparation: ''
+    }
+  ],
+  demographicOutlook: '',
+  digitalTransformationOutlook: '',
+  finalStrategy: '',
+  encouragementSlogans: [],
+  coachingQuestions: [''],
+  counselorNotice: '본 리포트는 AI가 분석한 데이터이며 내용에 대한 최종 평가는 전문가에게 있습니다.'
+};
+
+const GEMINI_TARGET_INTEREST_PROMPT = {
+  schema: TARGET_INTEREST_SCHEMA,
+  system() {
+    return `당신은 고용서비스 현장에서 10년 이상 근무한 직업상담사이자 AI 커리어 컨설턴트입니다.
+사용자가 직접 입력한 직업선호도검사(L형) 점수를 바탕으로, 희망직무가 있는 내담자의 리포트 JSON을 작성합니다.
+입력되지 않은 항목은 추정하지 말고, 모든 해석은 입력된 점수와 인적사항, 상담사 메모를 근거로 작성하세요.
+검사 결과만으로 합격/불합격이나 직업 적합성을 단정하지 말고 가능성, 확인 과제, 준비 방향으로 표현하세요.
+HTML, markdown, 코드블록 없이 JSON 객체만 반환하세요. 첫 글자는 {, 마지막 글자는 } 이어야 합니다.`;
+  },
+  user(input) {
+    return `아래 검사 데이터를 기반으로 희망직무 있음 전용 compact JSON을 생성하세요.
+Gemini는 변하는 상담 문장과 분석 내용만 작성하고, 표 구조/제목/순서/디자인/고정 문구는 index.html이 렌더링합니다.
+
+[출력 필드]
+- reportTitle
+- participantInfo.name
+- participantInfo.age
+- participantInfo.education
+- participantInfo.targetJob
+- participantInfo.coreCode
+- participantInfo.strengthSummary
+- integratedAnalysis
+- targetJobCompetencyAnalysis.fitSummary
+- targetJobCompetencyAnalysis.matchingPoints
+- targetJobCompetencyAnalysis.gaps
+- swot.strengths
+- swot.weaknesses
+- swot.opportunities
+- swot.threats
+- recommendedJobs
+- demographicOutlook
+- digitalTransformationOutlook
+- finalStrategy
+- encouragementSlogans
+- coachingQuestions
+
+[작성 기준]
+- 위 출력 필드 외의 필드는 만들지 마세요.
+- 희망직무 있음 리포트입니다. 희망직무와 검사 결과의 일치점, 보완 가능성, 실행 과제를 중심으로 작성하세요.
+- participantInfo에는 name, age, education, targetJob, coreCode, strengthSummary만 채우세요.
+- coreCode는 직업흥미검사의 핵심 코드 2개를 작성하세요. 예: RS
+- participantInfo.strengthSummary는 직업흥미 핵심 코드와 희망직무를 연결한 강점 요약으로, 직업흥미 핵심 코드 2개를 바탕으로 내담자의 강점을 은유적이되 과장 없이 한 줄로 요약하세요.
+- participantInfo.strengthSummary는 25~45자 정도의 명사형 문장으로 작성하고, 예시는 "분석적 통찰력을 바탕으로 조직이나 프로젝트를 주도하는 해결사"입니다.
+- 직업흥미검사 점수는 필수 근거입니다. 다만 점수 나열은 피하고 꼭 필요한 곳에만 코드명과 점수를 직접 언급하세요.
+- 성격검사와 생활사검사는 입력된 경우에만 반영하고, 미입력인 경우 추정하지 마세요.
+- targetJobCompetencyAnalysis.fitSummary는 희망직무와 검사 결과의 일치점, 불일치 지점, 보완 가능성을 2~3문장씩 2~3문단으로 작성하세요.
+- targetJobCompetencyAnalysis.matchingPoints는 입력된 직업흥미 점수, 학력, 자격증, 상담사 메모와 직접 연결되는 근거를 정확히 3개 작성하세요.
+- targetJobCompetencyAnalysis.gaps는 희망직무 수행 시 보완할 점을 정확히 3개 작성하되, 부정적 판정이 아니라 훈련 가능한 과제로 표현하세요.
+- integratedAnalysis는 2~3문장씩 2문단으로 작성하세요. 직업흥미, 성격검사, 생활사 맥락, 상담사 메모를 희망직무 기준으로 교차 분석하되 점수를 반복해서 읽어주지 마세요.
+- SWOT는 strengths, weaknesses, opportunities, threats 각각 정확히 2개씩 작성하세요. 각 항목은 1문장으로 제한하세요.
+- recommendedJobs는 정확히 5개 작성하세요. 희망직무, 직업흥미 점수, 입력된 성격검사와 생활사, 학력, 전공, 자격증을 함께 고려하세요.
+- recommendedJobs 각 항목은 title, reason, relatedStrength, preparation을 모두 채우세요.
+- reason은 추천 근거, relatedStrength는 관련 강점, preparation은 준비 과제와 필요한 경우 자격증 추천까지 각각 1문장으로 작성하세요.
+- demographicOutlook, digitalTransformationOutlook, finalStrategy는 각각 2~3문장씩 2문단으로 작성하고, 일반론이 아니라 입력된 검사 결과와 희망직무를 연결하세요.
+- coachingQuestions는 정확히 10개의 문자열 배열로 작성하세요. 객체가 아니라 상담사가 바로 물을 수 있는 자연스러운 1문장 질문만 넣으세요.
+- encouragementSlogans는 정확히 4개 작성하세요. 내담자의 강점 중심 격려 메시지로 작성하세요.
+- 모든 문장은 자연스러운 한국어 상담 문체로 작성하고, 과장된 확신보다 가능성 중심으로 표현하세요.
+- HTML 태그, markdown, 코드블록, 설명문 없이 JSON 객체만 반환하세요.
+
+[검사 데이터]
+${JSON.stringify(input, null, 2)}
+
+[JSON Schema]
+${JSON.stringify(TARGET_INTEREST_SCHEMA)}`;
+  }
+};
+
+window.TARGET_INTEREST_SCHEMA = TARGET_INTEREST_SCHEMA;
+window.GEMINI_TARGET_INTEREST_PROMPT = GEMINI_TARGET_INTEREST_PROMPT;
+})();
